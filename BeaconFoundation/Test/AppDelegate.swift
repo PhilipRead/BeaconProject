@@ -115,6 +115,23 @@ extension AppDelegate: CLLocationManagerDelegate {
     }
     
     func locationManager(manager: CLLocationManager!,
+        didDetermineState state: CLRegionState,
+        forRegion region: CLRegion!){
+        
+            NSLog(region.identifier)
+            if(region.identifier == "GPW_MAP"){
+                let viewController:ViewController = window!.rootViewController as ViewController
+                if(state == CLRegionState.Inside){
+                    viewController.loadMap()
+                }
+                else{
+                    viewController.outOfRange()
+                }
+            }
+            
+    }
+    
+   /* func locationManager(manager: CLLocationManager!,
         didEnterRegion region: CLRegion!) {
             //manager.startRangingBeaconsInRegion(region as CLBeaconRegion)
             //manager.startUpdatingLocation()
@@ -138,6 +155,6 @@ extension AppDelegate: CLLocationManagerDelegate {
             
             NSLog("You exited the region")
             sendLocalNotificationWithMessage("You exited the region")
-    }
+    }*/
 }
 
