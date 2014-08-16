@@ -16,7 +16,12 @@ class ViewController: UIViewController {
     let mapURL = "http://www.gpwassociates.com/wpsite/wp-content/uploads/2014/03/GPW-Office-Map.jpg"
     let outOfRangeURL = "http://www.google.com"
     
-    func loadMap() {
+    func loadURL(URLString: NSString){
+        let requestURL = NSURL(string: URLString)
+        let request = NSURLRequest(URL: requestURL)
+        webView.loadRequest(request)
+    }
+  /*  func loadMap() {
         let requestURL = NSURL(string:mapURL)
         let request = NSURLRequest(URL: requestURL)
         webView.loadRequest(request)
@@ -26,7 +31,7 @@ class ViewController: UIViewController {
         let requestURL = NSURL(string:outOfRangeURL)
         let request = NSURLRequest(URL: requestURL)
         webView.loadRequest(request)
-    }
+    }*/
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -38,11 +43,6 @@ class ViewController: UIViewController {
         
         let appDelegate = UIApplication.sharedApplication().delegate as AppDelegate
         let locationManager = appDelegate.locationManager
-        
-        //locationManager?.requestStateForRegion(beaconRegion)
-        
-        //let locationManagerDelegate = locationManager?.delegate
-        //locationManagerDelegate?.locationManager!(locationManager, didDetermineState: CLRegionState.Unknown, forRegion: beaconRegion)
         
     }
     

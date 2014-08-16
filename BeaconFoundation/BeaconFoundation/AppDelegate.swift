@@ -15,6 +15,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
     var window: UIWindow?
     var locationManager: CLLocationManager?
     var lastProximity: CLProximity?
+    var goneOutsideRange: Bool?
     
     
     func application(application: UIApplication!, didFinishLaunchingWithOptions launchOptions: NSDictionary!) -> Bool {
@@ -86,30 +87,48 @@ extension AppDelegate: CLLocationManagerDelegate {
             
             NSLog("didRangeBeacons");
             var message:String = ""
+            var stringURL:String = ""
             
             if(beacons.count > 0) {
                 let nearestBeacon:CLBeacon = beacons[0] as CLBeacon
                 
-                if(nearestBeacon.proximity == lastProximity ||
-                    nearestBeacon.proximity == CLProximity.Unknown) {
+                let curProximity = nearestBeacon.proximity
+                
+                if(curProximity == lastProximity) {
                         return;
                 }
-                lastProximity = nearestBeacon.proximity;
                 
-                switch nearestBeacon.proximity {
+                goneOutsideRange = false
+                lastProximity = curProximity;
+                
+                switch curProximity {
                 case CLProximity.Far:
+                    
                     message = "You are far away from the beacon"
+                    stringURL = "http://oi62.tinypic.com/2ivmstz.jpg"
                 case CLProximity.Near:
                     message = "You are near the beacon"
+                    stringURL = "http://oi58.tinypic.com/2r4udxv.jpg"
                 case CLProximity.Immediate:
                     message = "You are in the immediate proximity of the beacon"
+                    stringURL = "http://oi57.tinypic.com/25qtdp4.jpg"
                 case CLProximity.Unknown:
-                    return
+                    message = "Unknown beacon proximity"
+                    stringURL = "http://oi57.tinypic.com/jrsf82.jpg"
                 }
-            } else {
-                message = "No beacons are nearby"
+            }
+            else if(goneOutsideRange != true)
+            {
+                lastProximity = CLProximity.Unknown
+                goneOutsideRange = true
+                message = "Outside Beacon Region"
+                stringURL = "http://oi57.tinypic.com/jrsf82.jpg"
+            }
+            else{
+                return
             }
             
+            viewController.loadURL(stringURL)
             NSLog("%@", message)
             sendLocalNotificationWithMessage(message)
     }
@@ -118,7 +137,7 @@ extension AppDelegate: CLLocationManagerDelegate {
         didDetermineState state: CLRegionState,
         forRegion region: CLRegion!){
             
-            NSLog(region.identifier)
+           /* NSLog(region.identifier)
             if(region.identifier == "GPW_MAP"){
                 let viewController:ViewController = window!.rootViewController as ViewController
                 if(state == CLRegionState.Inside){
@@ -127,7 +146,7 @@ extension AppDelegate: CLLocationManagerDelegate {
                 else{
                     viewController.outOfRange()
                 }
-            }
+            }*/
             
     }
     
