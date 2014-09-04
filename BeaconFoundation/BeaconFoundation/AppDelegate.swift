@@ -12,16 +12,18 @@ import CoreLocation
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate {
     
+    var curURL: NSString?
     var window: UIWindow?
     var locationManager: CLLocationManager?
     var lastProximity: CLProximity?
     var goneOutsideRange: Bool?
+    var curView: UIViewController?
     
     
     func application(application: UIApplication!, didFinishLaunchingWithOptions launchOptions: NSDictionary!) -> Bool {
         
         let uuidString = "E2C56DB5-DFFB-48D2-B060-D0F5A71096E0"
-        let beaconIdentifier = "GPW_MAP"
+        let beaconIdentifier = "GPW_Printer"
         let beaconUUID:NSUUID = NSUUID(UUIDString: uuidString)
         let beaconRegion:CLBeaconRegion = CLBeaconRegion(proximityUUID: beaconUUID, identifier:beaconIdentifier)
         
@@ -37,15 +39,51 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
         locationManager!.startUpdatingLocation()
         
         if(application.respondsToSelector("registerUserNotificationSettings:")) {
-            application.registerUserNotificationSettings(
-                UIUserNotificationSettings(
-                    forTypes: UIUserNotificationType.Alert | UIUserNotificationType.Sound,
-                    categories: nil
-                )
-            )
+            
+            var acceptAction:UIMutableUserNotificationAction = UIMutableUserNotificationAction()
+            acceptAction.identifier = "acceptAction"
+            acceptAction.title = "Accept"
+            
+            acceptAction.activationMode = UIUserNotificationActivationMode.Foreground
+            acceptAction.destructive = false
+            acceptAction.authenticationRequired = false
+            
+            var declineAction:UIMutableUserNotificationAction = UIMutableUserNotificationAction()
+            declineAction.identifier = "declineAction"
+            declineAction.title = "Decline"
+            
+            declineAction.activationMode = UIUserNotificationActivationMode.Background
+            declineAction.destructive = false
+            declineAction.authenticationRequired = false
+            
+            var rangedCategory:UIMutableUserNotificationCategory = UIMutableUserNotificationCategory()
+            rangedCategory.identifier = "rangedCategory"
+            
+            let rangedActions:NSArray = [acceptAction, declineAction]
+            
+            rangedCategory.setActions(rangedActions, forContext: UIUserNotificationActionContext.Default)
+            
+            let categories:NSSet = NSSet(object: rangedCategory)
+            
+            let types:UIUserNotificationType = UIUserNotificationType.Alert
+            
+            let mySettings:UIUserNotificationSettings = UIUserNotificationSettings(forTypes: types, categories: categories)
+            
+            UIApplication.sharedApplication().registerUserNotificationSettings(mySettings)
         }
         
         return true
+    }
+    
+    func application(application: UIApplication, handleActionWithIdentifier identifier: String?, forLocalNotification notification: UILocalNotification, completionHandler: () -> Void) {
+        
+        if(identifier == "declineAction"){
+            return
+        }
+        
+        NSNotificationCenter.defaultCenter().postNotificationName("notificationPressed", object: nil);
+
+        
     }
     
     func applicationWillResignActive(application: UIApplication!) {
@@ -76,6 +114,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
 extension AppDelegate: CLLocationManagerDelegate {
     func sendLocalNotificationWithMessage(message: String!) {
         let notification:UILocalNotification = UILocalNotification()
+        notification.category = "rangedCategory"
         notification.alertBody = message
         UIApplication.sharedApplication().scheduleLocalNotification(notification)
     }
@@ -83,11 +122,9 @@ extension AppDelegate: CLLocationManagerDelegate {
     func locationManager(manager: CLLocationManager!,
         didRangeBeacons beacons: [AnyObject]!,
         inRegion region: CLBeaconRegion!) {
-            let viewController:ViewController = window!.rootViewController as ViewController
             
             NSLog("didRangeBeacons");
             var message:String = ""
-            var stringURL:String = ""
             
             if(beacons.count > 0) {
                 let nearestBeacon:CLBeacon = beacons[0] as CLBeacon
@@ -105,30 +142,34 @@ extension AppDelegate: CLLocationManagerDelegate {
                 case CLProximity.Far:
                     
                     message = "You are far away from the beacon"
-                    stringURL = "http://oi62.tinypic.com/2ivmstz.jpg"
+                    curURL = "http://oi62.tinypic.com/2ivmstz.jpg"
                 case CLProximity.Near:
                     message = "You are near the beacon"
-                    stringURL = "http://oi58.tinypic.com/2r4udxv.jpg"
+                    curURL = "http://oi58.tinypic.com/2r4udxv.jpg"
                 case CLProximity.Immediate:
                     message = "You are in the immediate proximity of the beacon"
-                    stringURL = "http://oi57.tinypic.com/25qtdp4.jpg"
+                    curURL = "http://oi57.tinypic.com/25qtdp4.jpg"
                 case CLProximity.Unknown:
                     message = "Unknown beacon proximity"
-                    stringURL = "http://oi57.tinypic.com/jrsf82.jpg"
+                    curURL = "http://oi57.tinypic.com/jrsf82.jpg"
                 }
             }
-            else if(goneOutsideRange != true)
-            {
+            else if(goneOutsideRange != true){
                 lastProximity = CLProximity.Unknown
                 goneOutsideRange = true
                 message = "Outside Beacon Region"
-                stringURL = "http://oi57.tinypic.com/jrsf82.jpg"
+                curURL = "http://oi57.tinypic.com/jrsf82.jpg"
             }
             else{
                 return
             }
             
-            viewController.loadURL(stringURL)
+            if(curView?.restorationIdentifier == "beaconViewer"){
+                let beaconView = curView as BeaconController
+                beaconView.loadURL()
+            }
+            
+            
             NSLog("%@", message)
             sendLocalNotificationWithMessage(message)
     }
@@ -137,43 +178,7 @@ extension AppDelegate: CLLocationManagerDelegate {
         didDetermineState state: CLRegionState,
         forRegion region: CLRegion!){
             
-           /* NSLog(region.identifier)
-            if(region.identifier == "GPW_MAP"){
-                let viewController:ViewController = window!.rootViewController as ViewController
-                if(state == CLRegionState.Inside){
-                    viewController.loadMap()
-                }
-                else{
-                    viewController.outOfRange()
-                }
-            }*/
-            
     }
     
-    /* func locationManager(manager: CLLocationManager!,
-    didEnterRegion region: CLRegion!) {
-    //manager.startRangingBeaconsInRegion(region as CLBeaconRegion)
-    //manager.startUpdatingLocation()
-    
-    let viewController:ViewController = window!.rootViewController as ViewController
-    
-    viewController.loadMap()
-    
-    NSLog("You entered the region")
-    sendLocalNotificationWithMessage("You entered the region")
-    }
-    
-    func locationManager(manager: CLLocationManager!,
-    didExitRegion region: CLRegion!) {
-    //manager.stopRangingBeaconsInRegion(region as CLBeaconRegion)
-    //manager.stopUpdatingLocation()
-    
-    let viewController:ViewController = window!.rootViewController as ViewController
-    
-    viewController.outOfRange()
-    
-    NSLog("You exited the region")
-    sendLocalNotificationWithMessage("You exited the region")
-    }*/
 }
 
